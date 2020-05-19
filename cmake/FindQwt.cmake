@@ -68,7 +68,7 @@ find_library(QWT_LIBRARY NAMES qwt qwt-qt5 HINTS ${QT_LIBRARY_DIR})
 
 set(QWT_LIBRARIES ${QWT_LIBRARY})
 
-include(indPackageHandleStandardArgs)
+include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args( Qwt REQUIRED_VARS QWT_LIBRARY QWT_INCLUDE_DIR VERSION_VAR QWT_VERSION_STRING )
 
 if(Qwt_FOUND AND NOT TARGET Qwt::Qwt)
