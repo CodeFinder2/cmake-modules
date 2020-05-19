@@ -1,2 +1,1 @@
-# cmake-modules
-Collection of CMake find modules to help finding libraries which do not have such modules (yet)
+This repository contains a collection of (hopefully useful) CMake find modules, scripts, macros and functions to simplify adding dependencies or configuring the build system.
