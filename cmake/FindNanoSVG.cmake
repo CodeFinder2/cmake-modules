@@ -11,7 +11,7 @@
 # package could not be found. Since there is no known package on popular Linux systems, this is
 # set to "nanosvg" on default.
 #
-# (C) Copyright 2017, Adrian Böckenkamp, 05/04/2017
+# (C) Copyright 2017-2021, Adrian Böckenkamp, 15/04/2021
 
 if (NOT DEFINED NanoSVG_FETCH_EXTERNAL)
   set(NanoSVG_FETCH_EXTERNAL "nanosvg")
@@ -35,28 +35,38 @@ if (NanoSVG_INCLUDE_DIRS AND NanoSVG_FETCH_EXTERNAL)
 endif()
 
 if (NanoSVG_FETCH_EXTERNAL)
-  include(ExternalProject)
-  set(PREFIX "${CMAKE_BINARY_DIR}/${NanoSVG_FETCH_EXTERNAL}")
-  set(SOURCE_DIR "${PREFIX}/src/${NanoSVG_FETCH_EXTERNAL}")
-  ExternalProject_Add(${NanoSVG_FETCH_EXTERNAL}
-    PREFIX ${PREFIX}
-    SOURCE_DIR ${SOURCE_DIR}
-    GIT_REPOSITORY https://github.com/memononen/nanosvg
-    GIT_TAG master
-    CONFIGURE_COMMAND ""
-    BUILD_COMMAND ""
-    INSTALL_COMMAND ""
-  )
-  set(NanoSVG_INCLUDE_DIRS "${SOURCE_DIR}/src")
+  if (TARGET ${NanoSVG_FETCH_EXTERNAL})
+    get_property(NanoSVG_INCLUDE_DIRS TARGET ${NanoSVG_FETCH_EXTERNAL} PROPERTY INCLUDE_DIRECTORIES)
+    get_property(NanoSVG_LIBRARIES TARGET ${NanoSVG_FETCH_EXTERNAL} PROPERTY LINK_LIBRARIES)
+    get_property(NanoSVG_DEFINITIONS TARGET ${NanoSVG_FETCH_EXTERNAL} PROPERTY COMPILE_DEFINITIONS)
+  else()
+    set(NanoSVG_DEFINITIONS -DNANOSVG_IMPLEMENTATION) # possibly also add -DNANOSVG_ALL_COLOR_KEYWORDS
+    set(NanoSVG_LIBRARIES "")
+
+    include(ExternalProject)
+    set(PREFIX "${CMAKE_BINARY_DIR}/${NanoSVG_FETCH_EXTERNAL}")
+    set(SOURCE_DIR "${PREFIX}/src/${NanoSVG_FETCH_EXTERNAL}")
+    ExternalProject_Add(${NanoSVG_FETCH_EXTERNAL}
+      PREFIX ${PREFIX}
+      UPDATE_DISCONNECTED 1
+      SOURCE_DIR ${SOURCE_DIR}
+      GIT_REPOSITORY https://github.com/memononen/nanosvg
+      GIT_TAG master
+      CONFIGURE_COMMAND ""
+      BUILD_COMMAND ""
+      INSTALL_COMMAND ""
+    )
+    set(NanoSVG_INCLUDE_DIRS "${SOURCE_DIR}/src")
+    set_target_properties(${NanoSVG_FETCH_EXTERNAL} PROPERTIES INCLUDE_DIRECTORIES "${NanoSVG_INCLUDE_DIRS}")
+    set_target_properties(${NanoSVG_FETCH_EXTERNAL} PROPERTIES LINK_LIBRARIES "${NanoSVG_LIBRARIES}")
+    set_target_properties(${NanoSVG_FETCH_EXTERNAL} PROPERTIES COMPILE_DEFINITIONS "${NanoSVG_DEFINITIONS}")
+  endif()
 endif()
 
 if(NOT NanoSVG_INCLUDE_DIRS AND NOT DEFINED ENV{NANOSVG_ROOT} AND
    NOT NANOSVG_ROOT AND NOT NanoSVG_FIND_QUIETLY)
   message(STATUS "You may want to set NANOSVG_ROOT (environment) variable to find NanoSVG.")
 endif()
-
-set(NanoSVG_DEFINITIONS -DNANOSVG_IMPLEMENTATION) # possibly also add -DNANOSVG_ALL_COLOR_KEYWORDS
-set(NanoSVG_LIBRARIES "")
 
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(NanoSVG DEFAULT_MSG NanoSVG_INCLUDE_DIRS NanoSVG_DEFINITIONS)

@@ -17,36 +17,49 @@
 set(INCLUDE_BASE_DIR "polyclipping")
 
 if (PolyClipping_FETCH_EXTERNAL) # prefer the latest GitHub sources
-  if (NOT PolyClipping_DEFINITIONS)
-    set(PolyClipping_DEFINITIONS "-Duse_lines=1")
-  endif()
+  if (TARGET ${PolyClipping_FETCH_EXTERNAL})
+    get_property(PolyClipping_INCLUDE_DIRS TARGET ${PolyClipping_FETCH_EXTERNAL} PROPERTY INCLUDE_DIRECTORIES)
+    get_property(PolyClipping_LIBRARIES TARGET ${PolyClipping_FETCH_EXTERNAL} PROPERTY LINK_LIBRARIES)
+    get_property(PolyClipping_DEFINITIONS TARGET ${PolyClipping_FETCH_EXTERNAL} PROPERTY COMPILE_DEFINITIONS)
+    get_property(PolyClipping_LIBRARY_DIRS TARGET ${PolyClipping_FETCH_EXTERNAL} PROPERTY LINK_DIRECTORIES)
+  else()
+    if (NOT PolyClipping_DEFINITIONS)
+      set(PolyClipping_DEFINITIONS "-Duse_lines=1")
+    endif()
 
-  include(ExternalProject)
-  set(CLIPPER_INSTALL_DIR "${CMAKE_CURRENT_BINARY_DIR}/${PolyClipping_FETCH_EXTERNAL}/install")
-  ExternalProject_Add(${PolyClipping_FETCH_EXTERNAL}
-    PREFIX ${CMAKE_CURRENT_BINARY_DIR}/${PolyClipping_FETCH_EXTERNAL}
-    GIT_REPOSITORY https://github.com/CodeFinder2/clipper.git
-    BUILD_COMMAND $(MAKE) COMMAND
-      echo "Clipper library compiled successfully."
-    GIT_TAG master
-    INSTALL_DIR install
-    INSTALL_COMMAND $(MAKE) install COMMAND
-      echo "Clipper library installed to ${CLIPPER_INSTALL_DIR}"
-    # Point CMake to the correct directory containing the CMakeLists.txt file. Since this is only
-    # supported in CMake >= v3.7, we copied the modified version of ExternalProject_Add() to the
-    # project's cmake/ module directory, see also (can be removed if we make CMake 3.7 min. req.):
-    # http://stackoverflow.com/questions/30028117/cmake-externalproject-how-to-specify-relative-path-to-the-root-cmakelists-txt
-    SOURCE_SUBDIR cpp
-    CMAKE_ARGS
-      -DCMAKE_BUILD_TYPE=RELEASE
-      -DCMAKE_INSTALL_PREFIX:PATH=${CLIPPER_INSTALL_DIR}
-      -DCMAKE_C_FLAGS=-march=native -mtune=native ${PolyClipping_DEFINITIONS}
-      -DCMAKE_CXX_FLAGS=-march=native -mtune=native ${PolyClipping_DEFINITIONS}
-  )
-  set(PolyClipping_INCLUDE_DIRS "${CLIPPER_INSTALL_DIR}/include/")
-  set(PolyClipping_LIBRARIES
-    "${CLIPPER_INSTALL_DIR}/lib/${CMAKE_SHARED_LIBRARY_PREFIX}polyclipping${CMAKE_SHARED_LIBRARY_SUFFIX}")
-  set(PolyClipping_LIBRARY_DIRS "${CLIPPER_INSTALL_DIR}/lib/")
+    include(ExternalProject)
+    set(CLIPPER_INSTALL_DIR "${CMAKE_CURRENT_BINARY_DIR}/${PolyClipping_FETCH_EXTERNAL}/install")
+    ExternalProject_Add(${PolyClipping_FETCH_EXTERNAL}
+      PREFIX ${CMAKE_CURRENT_BINARY_DIR}/${PolyClipping_FETCH_EXTERNAL}
+      UPDATE_DISCONNECTED 1
+      GIT_REPOSITORY https://github.com/CodeFinder2/clipper.git
+      BUILD_COMMAND $(MAKE) COMMAND
+        echo "Clipper library compiled successfully."
+      GIT_TAG master
+      INSTALL_DIR install
+      INSTALL_COMMAND $(MAKE) install COMMAND
+        echo "Clipper library installed to ${CLIPPER_INSTALL_DIR}"
+      # Point CMake to the correct directory containing the CMakeLists.txt file. Since this is only
+      # supported in CMake >= v3.7, we copied the modified version of ExternalProject_Add() to the
+      # project's cmake/ module directory, see also (can be removed if we make CMake 3.7 min. req.):
+      # http://stackoverflow.com/questions/30028117/cmake-externalproject-how-to-specify-relative-path-to-the-root-cmakelists-txt
+      SOURCE_SUBDIR cpp
+      CMAKE_ARGS
+        -DCMAKE_BUILD_TYPE=RELEASE
+        -DCMAKE_INSTALL_PREFIX:PATH=${CLIPPER_INSTALL_DIR}
+        -DCMAKE_C_FLAGS=-march=native -mtune=native ${PolyClipping_DEFINITIONS}
+        -DCMAKE_CXX_FLAGS=-march=native -mtune=native ${PolyClipping_DEFINITIONS}
+    )
+    set(PolyClipping_INCLUDE_DIRS "${CLIPPER_INSTALL_DIR}/include/")
+    set(PolyClipping_LIBRARIES
+      "${CLIPPER_INSTALL_DIR}/lib/${CMAKE_SHARED_LIBRARY_PREFIX}polyclipping${CMAKE_SHARED_LIBRARY_SUFFIX}")
+    set(PolyClipping_LIBRARY_DIRS "${CLIPPER_INSTALL_DIR}/lib/")
+
+    set_target_properties(${PolyClipping_FETCH_EXTERNAL} PROPERTIES INCLUDE_DIRECTORIES "${PolyClipping_INCLUDE_DIRS}")
+    set_target_properties(${PolyClipping_FETCH_EXTERNAL} PROPERTIES LINK_LIBRARIES "${PolyClipping_LIBRARIES}")
+    set_target_properties(${PolyClipping_FETCH_EXTERNAL} PROPERTIES COMPILE_DEFINITIONS "${PolyClipping_DEFINITIONS}")
+    set_target_properties(${PolyClipping_FETCH_EXTERNAL} PROPERTIES LINK_DIRECTORIES "${PolyClipping_LIBRARY_DIRS}")
+  endif()
 else() # search for the system package
   find_path(PolyClipping_INCLUDE_DIRS
     NAMES clipper.hpp

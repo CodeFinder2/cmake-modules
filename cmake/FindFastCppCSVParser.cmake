@@ -33,19 +33,32 @@ if (FastCppCSVParser_INCLUDE_DIRS AND FastCppCSVParser_FETCH_EXTERNAL)
 endif()
 
 if (FastCppCSVParser_FETCH_EXTERNAL)
-  include(ExternalProject)
-  set(PREFIX "${CMAKE_BINARY_DIR}/${FastCppCSVParser_FETCH_EXTERNAL}")
-  set(SOURCE_DIR "${PREFIX}/src/${INCLUDE_BASE_DIR}")
-  ExternalProject_Add(${FastCppCSVParser_FETCH_EXTERNAL}
-    PREFIX ${PREFIX}
-    GIT_REPOSITORY https://github.com/ben-strasser/fast-cpp-csv-parser.git
-    SOURCE_DIR ${SOURCE_DIR}
-    GIT_TAG master
-    CONFIGURE_COMMAND ""
-    BUILD_COMMAND ""
-    INSTALL_COMMAND ""
-  )
-  set(FastCppCSVParser_INCLUDE_DIRS "${PREFIX}/src")
+  if (TARGET ${FastCppCSVParser_FETCH_EXTERNAL})
+    get_property(FastCppCSVParser_INCLUDE_DIRS TARGET ${FastCppCSVParser_FETCH_EXTERNAL} PROPERTY INCLUDE_DIRECTORIES)
+    get_property(FastCppCSVParser_LIBRARIES TARGET ${FastCppCSVParser_FETCH_EXTERNAL} PROPERTY LINK_LIBRARIES)
+    get_property(FastCppCSVParser_DEFINITIONS TARGET ${FastCppCSVParser_FETCH_EXTERNAL} PROPERTY COMPILE_DEFINITIONS)
+  else()
+    set(FastCppCSVParser_DEFINITIONS "")
+    set(FastCppCSVParser_LIBRARIES "")
+
+    include(ExternalProject)
+    set(PREFIX "${CMAKE_BINARY_DIR}/${FastCppCSVParser_FETCH_EXTERNAL}")
+    set(SOURCE_DIR "${PREFIX}/src/${INCLUDE_BASE_DIR}")
+    ExternalProject_Add(${FastCppCSVParser_FETCH_EXTERNAL}
+      PREFIX ${PREFIX}
+      UPDATE_DISCONNECTED 1
+      GIT_REPOSITORY https://github.com/ben-strasser/fast-cpp-csv-parser.git
+      SOURCE_DIR ${SOURCE_DIR}
+      GIT_TAG master
+      CONFIGURE_COMMAND ""
+      BUILD_COMMAND ""
+      INSTALL_COMMAND ""
+    )
+    set(FastCppCSVParser_INCLUDE_DIRS "${PREFIX}/src")
+    set_target_properties(${FastCppCSVParser_FETCH_EXTERNAL} PROPERTIES INCLUDE_DIRECTORIES "${FastCppCSVParser_INCLUDE_DIRS}")
+    set_target_properties(${FastCppCSVParser_FETCH_EXTERNAL} PROPERTIES LINK_LIBRARIES "${FastCppCSVParser_LIBRARIES}")
+    set_target_properties(${FastCppCSVParser_FETCH_EXTERNAL} PROPERTIES COMPILE_DEFINITIONS "${FastCppCSVParser_DEFINITIONS}")
+  endif()
 endif()
 
 # FastCppCSVParser requires pthreads:
@@ -64,8 +77,6 @@ endif()
 if(CMAKE_USE_PTHREADS_INIT)
   set(FastCppCSVParser_LINKER_FLAGS ${CMAKE_THREAD_LIBS_INIT})
 endif()
-set(FastCppCSVParser_DEFINITIONS "")
-set(FastCppCSVParser_LIBRARIES "")
 
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(FastCppCSVParser DEFAULT_MSG FastCppCSVParser_INCLUDE_DIRS
